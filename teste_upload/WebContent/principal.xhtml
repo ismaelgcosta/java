@@ -68,7 +68,9 @@ document.oncontextmenu = new Function("return false;");
 		<p:graphicImage id="mymage" value="resources/fotos/cropped.jpg" cache="false" />
 		 <p:commandButton value="Crop" ajax="false" oncomplete="javascript:window.location.reload()" actionListener="#{salvarMB.crop()}" update="@form"/>
 	</h:form>
-	
+	 
+	<!--  ksfjlas -->
+	 
 	<h:form enctype="multipart/form-data">  
   
     <p:fileUpload fileUploadListener="#{salvarMB.handleFileUpload}" 
