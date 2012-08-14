@@ -19,6 +19,11 @@ import org.primefaces.model.CroppedImage;
 import org.primefaces.model.DefaultStreamedContent;
 import org.primefaces.model.StreamedContent;
 
+/**
+ * 
+ * @author Usuario
+ *
+ */
 @ManagedBean(name="salvarMB")
 public class SalvaArquivoMB implements Serializable{
 
