@@ -1,0 +1,35 @@
+.logotipo {
+	height: 100px;
+	width: 40%;
+	float: left;
+}
+
+.titulo {
+	height: 100px;
+	width: 60%;
+	float: left;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.stylepainelcadastro {
+	font-family: Arial, Helvetica, sans-serif;
+	padding-top: 20px;
+	padding-left: 10px;
+	font-size: 14px;
+	float: left;
+	margin-top: 20px;
+}
+
+.topo {
+	float: left;
+	height: 110px;
+	width: 100%;
+}
+
+.menu {
+	float: left;
+	width: 180px;
+	height: 400px;
+}
+
