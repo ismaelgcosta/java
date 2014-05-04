@@ -1,0 +1,25 @@
+<h2>Contacts <a class="btn btn-primary pull-right" href="#/books/new"><i class="icon-plus-sign icon-white"></i> Add New</a></h2>
+
+<table class="table table-striped">
+    <tr ng-repeat="contact in contacts">
+        <td>{{contact.firstName}} {{contact.lastName}}</td>
+    </tr>
+</table>
+    
+<table class="table table-striped">
+    
+    <tr ng-repeat="book in doops">
+        <td>{{book.title}}</td>
+        <td>{{book.author.firstName}} {{book.author.lastName}}</td>
+        <td>
+            <div class="pull-right">
+                <a class="btn btn-info" href="#/books/{{book.id}}">
+                    <i class="icon-pencil icon-white"></i> Edit
+                </a>
+                <button class="btn btn-danger" ng-click="deleteBook(book)">
+                    <i class="icon-trash icon-white"></i> Delete
+                </button>
+            </div>
+        </td>
+    </tr>
+</table>
