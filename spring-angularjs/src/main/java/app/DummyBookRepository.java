@@ -25,6 +25,9 @@ class DummyBookRepository implements BookRepository {
     @Override
     public List<Book> findAll() {
         List<Book> books = new ArrayList<Book>(this.books.values());
+        Author author = new Author("authorrr", "sobre autor"););
+        books.add(new Book("book 1", author));
+        books.add(new Book("book 2", author));
         Collections.sort(books, new Comparator<Book>() {
             @Override
             public int compare(Book o1, Book o2) {
