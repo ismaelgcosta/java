@@ -27,7 +27,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 @Path(ContactsResource.CONTACTS_URL)
 public class ContactsResource {
-    public static final String CONTACTS_URL = "/contacts";
+    public static final String CONTACTS_URL = "/api/contacts";
     @Autowired
     ContactService service;
 

@@ -1,0 +1,307 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:oauth="http://www.springframework.org/schema/security/oauth2"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/security
+        http://www.springframework.org/schema/security/spring-security-3.1.xsd
+        http://www.springframework.org/schema/security/oauth2
+        http://www.springframework.org/schema/security/spring-security-oauth2-1.0.xsd">
+
+	<context:component-scan base-package="org.jboss.resteasy.examples.springmvc" />
+	<context:annotation-config />
+
+	<import resource="springmvc-resteasy.xml" />
+	
+	<!-- <bean id="clientDetailsUserService"
+		class="org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService">
+		<constructor-arg ref="clientDetails" />
+	</bean>
+
+	Used for the persistenceof tokens (currently an in memory implementation)
+	<bean id="tokenStore"
+		class="org.springframework.security.oauth2.provider.token.InMemoryTokenStore" />
+
+	Used to create token and and every thing about them except for their 
+		persistence that is reposibility of TokenStore (Given here is a default implementation)
+	<bean id="tokenServices"
+		class="org.springframework.security.oauth2.provider.token.DefaultTokenServices">
+		<property name="tokenStore" ref="tokenStore" />
+		<property name="supportRefreshToken" value="true" />
+		<property name="accessTokenValiditySeconds" value="300000"></property>
+		<property name="clientDetailsService" ref="clientDetails" />
+	</bean>
+
+	<bean id="userApprovalHandler"
+		class="org.springframework.security.oauth2.provider.approval.TokenServicesUserApprovalHandler">
+		<property name="tokenServices" ref="tokenServices" />
+	</bean>
+	
+	<bean id="logoutSuccessHandler" class="org.jboss.resteasy.examples.springmvc.SpringSecurityLogoutHandler">
+		<property name="tokenstore" ref="tokenStore"></property>
+	</bean>
+
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver"> 
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView" 
+		/> <property name="prefix" value="/WEB-INF/" /> <property name="suffix" value=".jsp" 
+		/> </bean>
+
+	<security:http pattern="/oauth/token" create-session="stateless"
+		authentication-manager-ref="clientAuthenticationManager">
+		<security:intercept-url pattern="/oauth/token" access="IS_AUTHENTICATED_FULLY" />
+		<security:anonymous enabled="false" />
+		<security:http-basic entry-point-ref="clientAuthenticationEntryPoint" />
+		include this only if you need to authenticate clients via request 
+			parameters
+		<security:custom-filter ref="clientCredentialsTokenEndpointFilter"
+			before="BASIC_AUTH_FILTER" />
+		<security:access-denied-handler ref="oauthAccessDeniedHandler" />
+	</security:http>
+
+	The OAuth2 protected resources are separated out into their own block 
+		so we can deal with authorization and error handling separately. This isn't 
+		mandatory, but it makes it easier to control the behaviour.
+	<security:http pattern="/api/**" create-session="never"
+		entry-point-ref="oauthAuthenticationEntryPoint"
+		access-decision-manager-ref="accessDecisionManager">
+		<security:anonymous enabled="false" />
+		<security:intercept-url pattern="/api/**" access="ROLE_USER" />
+		<security:custom-filter ref="resourceServerFilter" before="PRE_AUTH_FILTER" />
+		<security:access-denied-handler ref="oauthAccessDeniedHandler" />
+	</security:http>
+
+	<security:http pattern="/logout" create-session="never"
+		entry-point-ref="oauthAuthenticationEntryPoint">
+		<security:anonymous enabled="false" />
+		<security:intercept-url pattern="/logout" method="GET" />
+		<security:logout invalidate-session="true" logout-url="/logout" success-handler-ref="logoutSuccessHandler" />
+		<security:custom-filter ref="resourceServerFilter" before="PRE_AUTH_FILTER" />
+		<security:access-denied-handler ref="oauthAccessDeniedHandler" />
+	</security:http>
+
+	<bean id="oauthAuthenticationEntryPoint"
+		class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">
+	</bean>
+
+	<bean id="clientAuthenticationEntryPoint"
+		class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">
+		<property name="realmName" value="springsec/client" />
+		<property name="realmName" value="test/client" />
+		<property name="typeName" value="Basic" />
+	</bean>
+
+	<bean id="oauthAccessDeniedHandler"
+		class="org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler">
+	</bean>
+
+	<bean id="clientCredentialsTokenEndpointFilter"
+		class="org.springframework.security.oauth2.provider.client.ClientCredentialsTokenEndpointFilter">
+		<property name="authenticationManager" ref="clientAuthenticationManager" />
+	</bean>
+
+	<bean id="accessDecisionManager" class="org.springframework.security.access.vote.UnanimousBased"
+		xmlns="http://www.springframework.org/schema/beans">
+		<constructor-arg>
+			<list>
+				<bean class="org.springframework.security.oauth2.provider.vote.ScopeVoter" />
+				<bean class="org.springframework.security.access.vote.RoleVoter" />
+				<bean class="org.springframework.security.access.vote.AuthenticatedVoter" />
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<security:authentication-manager id="clientAuthenticationManager">
+		<security:authentication-provider user-service-ref="clientDetailsUserService" />
+	</security:authentication-manager>
+
+	<security:authentication-manager alias="authenticationManager">
+		<authentication-provider user-service-ref="clientDetailsUserService" 
+			/>
+		<security:authentication-provider>
+			<security:user-service id="userDetailsService">
+				<security:user name="marissa" password="koala" authorities="ROLE_USER" />
+				<security:user name="paul" password="emu" authorities="ROLE_USER" />
+			</security:user-service>
+		</security:authentication-provider>
+	</security:authentication-manager>
+
+	authorization-server aka AuthorizationServerTokenServices is an interface 
+		that defines everything necessary for token management
+	<oauth:authorization-server
+		client-details-service-ref="clientDetails" token-services-ref="tokenServices"
+		user-approval-handler-ref="userApprovalHandler">
+		<oauth:authorization-code />
+		<oauth:implicit />
+		<oauth:refresh-token />
+		<oauth:client-credentials />
+		<oauth:password />
+	</oauth:authorization-server>
+
+	<oauth:resource-server id="resourceServerFilter"
+		resource-id="test" token-services-ref="tokenServices" />
+	ClientsDeailsService: Entry Point to clients database (given is in 
+		memory implementation)
+	<oauth:client-details-service id="clientDetails">
+
+		<oauth:client client-id="my-trusted-client"
+			authorized-grant-types="password,authorization_code,refresh_token,implicit"
+			authorities="ROLE_CLIENT, ROLE_TRUSTED_CLIENT" scope="read,write,trust"
+			access-token-validity="60" />
+
+		<oauth:client client-id="my-trusted-client-with-secret"
+			authorized-grant-types="password,authorization_code,refresh_token,implicit"
+			secret="somesecret" authorities="ROLE_CLIENT, ROLE_TRUSTED_CLIENT" />
+
+		<oauth:client client-id="my-client-with-secret"
+			authorized-grant-types="client_credentials" authorities="ROLE_CLIENT"
+			scope="read" secret="secret" />
+
+		<oauth:client client-id="my-less-trusted-client"
+			authorized-grant-types="authorization_code,implicit" authorities="ROLE_CLIENT" />
+
+		<oauth:client client-id="my-less-trusted-autoapprove-client"
+			authorized-grant-types="implicit" authorities="ROLE_CLIENT" />
+
+		<oauth:client client-id="my-client-with-registered-redirect"
+			authorized-grant-types="authorization_code,client_credentials"
+			authorities="ROLE_CLIENT" redirect-uri="http://anywhere?key=value"
+			scope="read,trust" />
+
+		<oauth:client client-id="my-untrusted-client-with-registered-redirect"
+			authorized-grant-types="authorization_code" authorities="ROLE_CLIENT"
+			redirect-uri="http://anywhere" scope="read" />
+
+		<oauth:client client-id="tonr" resource-ids="test"
+			authorized-grant-types="authorization_code,implicit" authorities="ROLE_CLIENT"
+			scope="read,write" secret="secret" />
+
+		Self defined client
+		<oauth:client client-id="the_client"
+			authorized-grant-types="authorization_code,client_credentials"
+			authorities="ROLE_USER" scope="read,write,trust" secret="secret" />
+
+	</oauth:client-details-service>
+
+	<security:global-method-security
+		pre-post-annotations="enabled" proxy-target-class="true">
+		you could also wire in the expression handler up at the layer of the 
+			http filters. See https://jira.springsource.org/browse/SEC-1452
+		<security:expression-handler ref="oauthExpressionHandler" />
+	</security:global-method-security>
+
+	<oauth:expression-handler id="oauthExpressionHandler" />
+
+	<oauth:web-expression-handler id="oauthWebExpressionHandler" /> -->
+
+    <!-- Users -->
+    <security:authentication-manager>
+        <security:authentication-provider>
+            <security:user-service>
+                <security:user name='kasper' password='repsak' authorities='user' />
+            </security:user-service>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+    <!-- Clients -->
+
+    <oauth:client-details-service id='clientDetailsService'>
+
+        <oauth:client client-id='web-client'
+                      authorized-grant-types='implicit'
+                      authorities='client'
+                      scope='read' />
+
+    </oauth:client-details-service>
+
+    <bean id='clientDetailsUserDetailsService' class='org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService'>
+        <constructor-arg ref='clientDetailsService' />
+    </bean>
+
+    <security:authentication-manager id='clientAuthenticationManager'>
+        <security:authentication-provider user-service-ref='clientDetailsUserDetailsService' />
+    </security:authentication-manager>
+
+    <!-- Tokens -->
+
+    <bean id='tokenStore' class='org.springframework.security.oauth2.provider.token.InMemoryTokenStore' />
+
+    <bean id='tokenServices' class='org.springframework.security.oauth2.provider.token.DefaultTokenServices'>
+        <property name='tokenStore' ref='tokenStore' />
+        <property name='accessTokenValiditySeconds' value='0' />
+    </bean>
+
+    <!-- Client authorisation -->
+    <oauth:authorization-server client-details-service-ref='clientDetailsService' token-services-ref='tokenServices'>
+        <oauth:implicit />
+    </oauth:authorization-server>
+
+    <!-- Client access handling -->
+
+    <oauth:web-expression-handler id='oAuthWebExpressionHandler' />
+
+    <!-- Provide only JSON responses -->
+    <bean id='oAuthExceptionRenderer' class='org.springframework.security.oauth2.provider.error.DefaultOAuth2ExceptionRenderer'>
+        <property name='messageConverters'>
+            <list>
+                <bean class='org.springframework.http.converter.json.MappingJackson2HttpMessageConverter' />
+            </list>
+        </property>
+    </bean>
+
+    <bean id='oAuthAuthenticationEntryPoint' class='org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint'>
+        <property name='realmName' value='portti' />
+        <property name='exceptionRenderer' ref='oAuthExceptionRenderer' />
+    </bean>
+
+    <bean id='clientAuthenticationEntryPoint' class='org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint'>
+        <property name='realmName' value='portti/client' />
+	<property name='typeName' value='Basic' />
+        <property name='exceptionRenderer' ref='oAuthExceptionRenderer' />
+    </bean>
+
+    <bean id='oAuthAccessDeniedHandler' class='org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler'>
+        <property name='exceptionRenderer' ref='oAuthExceptionRenderer' />
+    </bean>
+
+    <!-- Resource provider -->
+    <oauth:resource-server id='resourceServerFilter' entry-point-ref='oAuthAuthenticationEntryPoint' token-services-ref='tokenServices' />
+
+    <!-- Client authentication -->
+    <security:http pattern='/oauth/token' create-session='stateless' use-expressions='true' authentication-manager-ref='clientAuthenticationManager'>
+
+        <security:anonymous enabled='false' />
+        <security:http-basic entry-point-ref='clientAuthenticationEntryPoint' />
+        <security:access-denied-handler ref='oAuthAccessDeniedHandler' />
+
+        <security:intercept-url pattern='/oauth/token' access='isAuthenticated()' />
+
+    </security:http>
+
+    <!-- Client access -->
+    <security:http pattern='/api/**' create-session='stateless' use-expressions='true' entry-point-ref='oAuthAuthenticationEntryPoint'>
+
+        <security:anonymous enabled='false' />
+        <security:expression-handler ref='oAuthWebExpressionHandler' />
+        <security:custom-filter ref='resourceServerFilter' before='PRE_AUTH_FILTER' />
+        <security:access-denied-handler ref='oAuthAccessDeniedHandler' />
+
+        <security:intercept-url pattern='/api/secret' access='#oauth2.isUser() and #oauth2.hasScope("read")' />
+        <security:intercept-url pattern='/**' access='denyAll' />
+
+    </security:http>
+
+    <!-- User access -->
+    <security:http use-expressions='true' disable-url-rewriting='true'>
+
+        <security:form-login />
+        <security:logout />
+
+        <security:intercept-url pattern='/oauth/authorize' access='isFullyAuthenticated()' />
+        <security:intercept-url pattern='/**' access='permitAll' />
+
+    </security:http>
+
+</beans>
